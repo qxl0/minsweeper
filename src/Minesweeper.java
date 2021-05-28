@@ -6,6 +6,8 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,7 +19,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-public class Minesweeper implements ActionListener {
+public class Minesweeper implements ActionListener,ComponentListener {
 	JFrame frame = new JFrame("Minesweeper");
 	JButton reset = new JButton("Reset");
 	final int BOARD_SIZE = 20;
@@ -37,11 +39,13 @@ public class Minesweeper implements ActionListener {
 	BufferedImage img7;
 	BufferedImage img8;
 	BufferedImage mine;
+	int jbWidth, jbHeight;
 	public Minesweeper() {
-		frame.setSize(400, 500);
+		frame.setSize(800, 800);
 		frame.setLayout(new BorderLayout());
 		frame.add(reset, BorderLayout.NORTH);
 		reset.addActionListener(this);
+		frame.addComponentListener(this);
 		//Button grid
 		grid.setLayout(new GridLayout(BOARD_SIZE,BOARD_SIZE));
 		for (int a = 0; a < buttons.length; a++) {
@@ -61,15 +65,43 @@ public class Minesweeper implements ActionListener {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
 		
+		jbWidth = grid.getComponent(0).getWidth();
+		jbHeight = grid.getComponent(0).getHeight();
 		// load all images
-		loadAllImages();
+		loadAllImages(jbWidth, jbHeight);
+		resizeAllImages(jbWidth, jbHeight);
 //		for (int i = 0; i < buttons.length; i++) {
 //			for (int j = 0; j < buttons[0].length; j++) {
 //					buttons[i][j].setText(counts[i][j] + "");
 //			}
 //		}
 	}
-	private void loadAllImages() {
+	public void componentResized(ComponentEvent e) {
+        jbWidth = frame.getComponent(0).getWidth()/BOARD_SIZE;
+        jbHeight = frame.getComponent(0).getHeight()/BOARD_SIZE;
+        System.out.println(e.getComponent().getClass().getName() + " --- Resized: " + jbWidth + "," + jbHeight);         
+        resizeAllImages(jbWidth, jbHeight);
+        repaintAllButtons();
+    }
+	private void repaintAllButtons() {
+		for (int i = 0;i < buttons.length; i++) {
+			for (int j=0; j< buttons[0].length; j++) {
+				if (buttons[i][j].isEnabled() == false && counts[i][j] != 0) {
+					showButton(buttons[i][j], counts[i][j]);
+				}
+			}
+		}
+	}
+	public void componentHidden(ComponentEvent e) {
+        System.out.println(e.getComponent().getClass().getName() + " --- Hidden");
+    }
+    public void componentMoved(ComponentEvent e) {
+        System.out.println(e.getComponent().getClass().getName() + " --- Moved");
+    }
+    public void componentShown(ComponentEvent e) {
+        System.out.println(e.getComponent().getClass().getName() + " --- Shown");
+    }
+	private void loadAllImages(int width, int height) {
 		// TODO Auto-generated method stub
 		try {
 			img1 = ImageIO.read(getClass().getResource("img/1.png"));
@@ -80,6 +112,20 @@ public class Minesweeper implements ActionListener {
 			img6 = ImageIO.read(getClass().getResource("img/6.png"));
 			img7 = ImageIO.read(getClass().getResource("img/7.png"));
 			mine = ImageIO.read(getClass().getResource("img/bomb.png"));
+		} catch(Exception ex) {
+			System.out.println(ex.getMessage());
+		}
+	}
+	private void resizeAllImages(int width, int height) {
+		try {
+			img6 = resizeImage(img6, width, height);
+			img7 = resizeImage(img7, width, height);
+			img5 = resizeImage(img5, width, height);
+			mine = resizeImage(mine, width, height);
+			img4 = resizeImage(img4, width, height);
+			img3 = resizeImage(img3, width, height);
+			img2 = resizeImage(img2, width, height);
+			img1 = resizeImage(img1, width, height);
 		} catch(Exception ex) {
 			System.out.println(ex.getMessage());
 		}
@@ -161,11 +207,13 @@ public class Minesweeper implements ActionListener {
 	}
 	
 	public void resetGame() {
+		Color defaultBackgroundColor = new JButton().getBackground();
 		for (int i = 0; i < buttons.length; i++) {
 			for (int j = 0; j < buttons[0].length; j++) {
 				buttons[i][j].setEnabled(true);
 				buttons[i][j].setIcon(null);
 				buttons[i][j].setText("");
+				buttons[i][j].setBackground(defaultBackgroundColor);
 			}
 		}
 		createRandomMines();
@@ -235,13 +283,16 @@ public class Minesweeper implements ActionListener {
 
 	private void showButton(JButton jButton, int i) {
 		// TODO Auto-generated method stub
+		if (i == 0) {
+			jButton.setBackground(Color.LIGHT_GRAY);
 		
+			return;
+		}
 		try {
 		    // get the size of Jbutton
-			BufferedImage img = getCorrectImg(i);
+			BufferedImage img2 = getCorrectImg(i);
 		    //Dimension size = jButton.getPreferredSize();
 		    //System.out.println("size is: " + size.toString());
-		    BufferedImage img2 = resizeImage(img, jButton.getWidth(), jButton.getHeight());
 		    ImageIcon imgIcon = new ImageIcon(img2);
 		    jButton.setIcon(imgIcon);
 		    jButton.setDisabledIcon(imgIcon);
